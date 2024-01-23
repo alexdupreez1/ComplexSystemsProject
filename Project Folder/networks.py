@@ -13,9 +13,9 @@ class Trader:
         return f"Trader{self.node_number}"
 
 
-def create_trader_network(num_traders, avg_degree):
+def create_trader_network(num_traders, avg_degree,rewiring_probability):
     traders = [Trader(i) for i in range(num_traders)]
-    network = nx.random_regular_graph(d=avg_degree, n=num_traders)
+    network = nx.watts_strogatz_graph(n=num_traders, k=avg_degree, p=rewiring_probability)
 
     for i, node in enumerate(network.nodes()):
         network.nodes[node]['trader'] = traders[i]
@@ -23,25 +23,29 @@ def create_trader_network(num_traders, avg_degree):
     return network, traders
 
 
-def distribute_info(trader, neighbors, network):
-    
-    if trader.info >= trader.info_threshold:
-        total_info_to_distribute = 0.7 * trader.info
-        info_per_neighbor = total_info_to_distribute / len(neighbors)
+def distribute_info(trader, network):
+    for trader in traders:
+        neighbors = list(trader_network.neighbors(trader.node_number))
+        if trader.info >= trader.info_threshold:
+            total_info_to_distribute = 0.5 * trader.info
+
+            # equal or randomize?
+            info_per_neighbor = total_info_to_distribute / len(neighbors)
 
 
-        for neighbor_node in neighbors:
-            neighbor = network.nodes[neighbor_node]['trader']
-            neighbor.info += info_per_neighbor
+            for neighbor_node in neighbors:
+                neighbor = network.nodes[neighbor_node]['trader']
+                neighbor.info += info_per_neighbor
 
  
-        trader.info = 0
+            trader.info = 0
 
 
 num_traders = 200  
-avg_degree = 5    
+avg_degree = 5
+rewiring_probability = 0.02    
 
-trader_network, traders = create_trader_network(num_traders, avg_degree)
+trader_network, traders = create_trader_network(num_traders, avg_degree,rewiring_probability)
 
 
 fig, ax = plt.subplots(figsize=(10, 8))
@@ -53,9 +57,8 @@ def update(frame):
         trader.info = random.uniform(0, 0.2)
         
 
-    for trader in traders:
-        neighbors = list(trader_network.neighbors(trader.node_number))
-        distribute_info(trader, neighbors, trader_network)
+    
+    distribute_info(trader, trader_network)
 
   
     node_colors = [trader_network.nodes[node]['trader'].info for node in trader_network.nodes]
