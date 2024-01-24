@@ -3,15 +3,17 @@ import networkx as nx
 from matplotlib.animation import FuncAnimation
 import random
 
-class Trader:
+from trader import Trader
 
-    """Defining a class for a trader object"""
+# class Trader:
+
+#     """Defining a class for a trader object"""
 
 
-    def __init__(self, node_number):
-        self.node_number = node_number
-        self.info_threshold = 1
-        self.info = 0
+#     def __init__(self, node_number):
+#         self.node_number = node_number
+#         self.info_threshold = 1
+#         self.info = 0
 
 def create_trader_network(num_traders, avg_degree, rewiring_probability):
 
@@ -39,7 +41,7 @@ def get_neighbours(trader,network):
     """Gets the neighbours of a given node"""
 
 
-    neighbors = list(network.neighbors(trader.node_number))
+    neighbors = list(network.neighbors(trader.node_number)) #A list of neighbour node numbers
 
     return neighbors
 
@@ -60,7 +62,7 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
 
     original = avalanche_unhandled
 
-    avalanche_set = set() #Stores nodes that exploded in the avalanch
+    avalanche_set = set() #Stores nodes that exploded in the avalanche
     while len(avalanche_unhandled) > 0:
         for unhandled in avalanche_unhandled:
 
@@ -71,11 +73,11 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
             print("Remaining unhandled avalanch nodes")
             print(avalanche_unhandled)
 
-            neighbours = get_neighbours(avalanche_unhandled[0],network)
+            neighbours = get_neighbours(trader_dictionary[avalanche_unhandled[0]],network)
 
             neighbours.remove(original)
 
-            information_per_neighbour = alpha * (avalanche_unhandled[0].info / len(neighbours))
+            information_per_neighbour = alpha * (trader_dictionary[avalanche_unhandled[0]].info / len(neighbours))
 
             for neighbour in neighbours:
                 trader_dictionary[neighbour].info += information_per_neighbour

@@ -3,8 +3,11 @@ import numpy as np
 
 class Trader():
     """A generic class to represent a trader in the market."""
-    def __init__(self):
+    def __init__(self,node_number):
         self.price = None
+        self.node_number = node_number
+        self.info_threshold = 1
+        self.info = 0
 
 class Fundamentalist(Trader):
     def decide_price(self, pt, pf, phi, epsilon):
@@ -52,32 +55,32 @@ def global_price_compute(fundamentalists, chartists, random_traders, omega):
     return pg
 
 # Test #
-# Each list is buit by 20 corresponding instances
-fundamentalists = [Fundamentalist() for _ in range(20)]
-chartists = [Chartist() for _ in range(20)]
-random_traders = [RandomTrader() for _ in range(20)]
-current_price = 100
-I_average = 0.4 # for test
+# # Each list is buit by 20 corresponding instances
+# fundamentalists = [Fundamentalist() for _ in range(20)]
+# chartists = [Chartist() for _ in range(20)]
+# random_traders = [RandomTrader() for _ in range(20)]
+# current_price = 100
+# I_average = 0.4 # for test
 
-# parameter setting in paper
-fundamental_price = 5000 
-phi = 2 
-sigma = 200 
-epsilon = random.uniform(-sigma, sigma)
-kappa = 2    #normal distribution?
-M = random.uniform(0, 90) # time step may be smaller than M ?
-# I_average ?#
-beta = 16 # exponent of global noise term
-omega = epsilon * np.exp(beta * I_average)
+# # parameter setting in paper
+# fundamental_price = 5000 
+# phi = 2 
+# sigma = 200 
+# epsilon = random.uniform(-sigma, sigma)
+# kappa = 2    #normal distribution?
+# M = random.uniform(0, 90) # time step may be smaller than M ?
+# # I_average ?#
+# beta = 16 # exponent of global noise term
+# omega = epsilon * np.exp(beta * I_average)
 
-for trader in fundamentalists:
-    trader.decide_price(current_price, fundamental_price, phi, epsilon)
+# for trader in fundamentalists:
+#     trader.decide_price(current_price, fundamental_price, phi, epsilon)
 
-for trader in chartists:
-    trader.decide_price(current_price, pm, kappa, M, epsilon)
+# for trader in chartists:
+#     trader.decide_price(current_price, pm, kappa, M, epsilon)
 
-for trader in random_traders:
-    trader.decide_price(current_price)
+# for trader in random_traders:
+#     trader.decide_price(current_price)
 
-global_price = global_price_compute(fundamentalists, chartists, random_traders, omega)
-print(global_price)
+# global_price = global_price_compute(fundamentalists, chartists, random_traders, omega)
+# print(global_price)
