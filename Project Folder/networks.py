@@ -51,34 +51,69 @@ def add_global_info(trader_dictionary,max_info):
         trader_dictionary[key].info += random.uniform(0,max_info) #Max info is the maximum amount of info that can be distirbuted into the network
 
 
+def handle_avalanche(trader,trader_dictionary,network, alpha):
+
+    """Handles complete avalanch from the first node that explodes after info was added to it"""
+
+    # Stores nodes that are yet to explode
+    avalanche_unhandled = [trader.node_number]
+
+    original = avalanche_unhandled
+
+    avalanche_set = set() #Stores nodes that exploded in the avalanch
+    while len(avalanche_unhandled) > 0:
+        for unhandled in avalanche_unhandled:
+
+
+            avalanche_unhandled =set(avalanche_unhandled)
+            avalanche_unhandled =list(avalanche_unhandled)
+
+            print("Remaining unhandled avalanch nodes")
+            print(avalanche_unhandled)
+
+            neighbours = get_neighbours(avalanche_unhandled[0],network)
+
+            neighbours.remove(original)
+
+            information_per_neighbour = alpha * (avalanche_unhandled[0].info / len(neighbours))
+
+            for neighbour in neighbours:
+                trader_dictionary[neighbour].info += information_per_neighbour
+                if trader_dictionary[neighbour].info >= trader_dictionary[neighbour].info_threshold:
+                    avalanche_unhandled.append(neighbour)
+
+            original = avalanche_unhandled[0]
+
+
+            avalanche_set.add(avalanche_unhandled[0].node_number)
+            avalanche_unhandled.remove(avalanche_unhandled[0].node_number)
+        
+        
+        
+    return avalanche_set,len(avalanche_set)
+
+
+
+
+    
+
 
 def distribute_info(trader_dictionary, network,max_info):
 
     """Distributes info after randomly selecting node (that exceeds the threshold)"""
 
-    print("BEFORE UPDATE")
-    for key in trader_dictionary:
 
-        print(trader_dictionary[key].info)
-
-    add_global_info(trader_dictionary,max_info)
-
-    print("AFTER UPDATE")
-
-    for key in trader_dictionary:
-        print(trader_dictionary[key].info)
-
-    #print(trader_dictionary.values().info)
+    add_global_info(trader_dictionary,max_info) #Adding global info
 
     keys = list(trader_dictionary.keys())
 
     random.shuffle(keys)
     
-    #for key in keys:
+    for key in keys:
         
-        #if trader_dictionary[key].info >= trader_dictionary[key].info_threshold:
+        if trader_dictionary[key].info >= trader_dictionary[key].info_threshold:
 
-            
+            get_neighbours()
             
             #neighbors = list(network.neighbors(trader.node_number))
             #total_info_to_distribute = 0.5 * trader.info
