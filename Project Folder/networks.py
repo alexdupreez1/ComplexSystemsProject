@@ -3,15 +3,17 @@ import networkx as nx
 from matplotlib.animation import FuncAnimation
 import random
 
-class Trader:
+from trader import Trader
 
-    """Defining a class for a trader object"""
+# class Trader:
+
+#     """Defining a class for a trader object"""
 
 
-    def __init__(self, node_number):
-        self.node_number = node_number
-        self.info_threshold = 1
-        self.info = 0
+#     def __init__(self, node_number):
+#         self.node_number = node_number
+#         self.info_threshold = 1
+#         self.info = 0
 
 def create_trader_network(num_traders, avg_degree, rewiring_probability):
 
@@ -59,7 +61,7 @@ def get_neighbours(trader,network):
     """Gets the neighbours of a given node"""
 
 
-    neighbors = list(network.neighbors(trader.node_number))
+    neighbors = list(network.neighbors(trader.node_number)) #A list of neighbour node numbers
 
     return neighbors
 
