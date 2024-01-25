@@ -23,13 +23,13 @@ class Fundamentalist(Trader):
                phi = weight of discrepancy, epsilon = noise
         """
 
-        self.price = pt + self.phi * (pf - pt)+ epsilon
+        self.price = pt + self.phi * (pf - pt) + epsilon
 
 class Chartist(Trader):
     def __init__(self,node_number):
         super().__init__(node_number)
         self.type = 'chartist'   
-        self.m = np.random.randint(0,90) #Make this normally distributed later
+        self.m = np.random.randint(1,90) #Make this normally distributed later
         self.kappa = np.random.normal(0,1) 
     def decide_price(self, pt, pm, epsilon):
         """ 
@@ -78,11 +78,15 @@ def global_price_calculate(traders):
     Input: traders = a dictionary of all traders
            omega = information-related noises
     """
-    epsilon = np.random.uniform(-200,200)
+    epsilon = np.random.uniform(-100,100)
 
-    exponent = 16 * np.mean([traders[key].info for key in traders]) 
+    exponent = 1 * np.mean([traders[key].info for key in traders]) 
+
+    # print("EXPONENT -->", str(exponent))
 
     omega = epsilon * np.exp(exponent)
+
+    # print("OMEGA", omega)
 
     # F = sum(1 for key in traders if traders[key].type =='fundamentalist')
     # C = sum(1 for key in traders if traders[key].type =='chartist')
