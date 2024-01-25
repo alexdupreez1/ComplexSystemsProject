@@ -27,12 +27,32 @@ def create_trader_network(num_traders, avg_degree, rewiring_probability):
 
     return network, trader_dictionary
 
-def display_network(network):
 
-    """Plots the network structure"""
+def display_network(network, trader_dict):
+    """Plots the network structure with additional information from trader_dict."""
+    
+    # Update node attributes based on trader_dict
+    for node in network.nodes():
+     
+        if node in trader_dict:
+            # Assuming you want to display some specific information from trader_dict
+            # You can format the label as per your requirement
+            network.nodes[node]['label'] = str(node) + ": " + str(round(trader_dict[node].info,2))
 
-    nx.draw(network, with_labels=True, node_color='lightblue', edge_color='red')
+    # Drawing the network
+    pos = nx.spring_layout(network)  # positions for all nodes
+
+    # nodes
+    nx.draw_networkx_nodes(network, pos, node_color='lightblue')
+
+    # edges
+    nx.draw_networkx_edges(network, pos, edge_color='red')
+
+    # labels
+    nx.draw_networkx_labels(network, pos, labels=nx.get_node_attributes(network, 'label'))
+
     plt.show()
+
     
 def get_neighbours(trader,network):
 
@@ -50,6 +70,54 @@ def add_global_info(trader_dictionary,max_info):
     for key in trader_dictionary:
         trader_dictionary[key].info += random.uniform(0,max_info) #Max info is the maximum amount of info that can be distirbuted into the network
 
+def count_common_elements(list1, list2):
+    set1 = set(list1)
+    set2 = set(list2)
+    common_elements = set1.intersection(set2)
+    return len(common_elements)
+
+def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size):
+    next_layer = []
+    avalanche_size += len(current_layer)
+    
+    # current layer intially just node 0
+    if len(current_layer) > 0:
+        for exploding_node in current_layer:
+  
+            neighbours = get_neighbours(trader_dictionary[exploding_node],network)
+            
+            if avalanche_size == 1:
+                information_per_neighbour = alpha * (trader_dictionary[exploding_node].info / (len(neighbours)))
+            else:
+                common_neighbours = count_common_elements(neighbours,previous_layer)
+                if len(neighbours)-common_neighbours != 0:
+
+                  
+                    information_per_neighbour = alpha * (trader_dictionary[exploding_node].info / (len(neighbours)-common_neighbours))
+            
+            # Layer 2 has been added to avalanche_unhandled
+            
+            for neighbour in neighbours:
+                if neighbour not in previous_layer and neighbour not in current_layer:
+                    
+                    trader_dictionary[neighbour].info += information_per_neighbour
+
+                    if trader_dictionary[neighbour].info >= trader_dictionary[neighbour].info_threshold and trader_dictionary[neighbour].node_number not in previous_layer and trader_dictionary[neighbour].node_number not in current_layer:
+                        
+                        next_layer.append(neighbour)
+                        
+            trader_dictionary[exploding_node].info = 0
+
+        current_layer = set(current_layer)
+        current_layer = list(current_layer)
+        previous_layer = current_layer.copy()
+        next_layer = [item for item in next_layer if item not in current_layer]
+        
+        avalanche_size = neighbour_layer(next_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size)
+
+   
+    return avalanche_size
+    
 
 def handle_avalanche(trader,trader_dictionary,network, alpha):
 
@@ -57,51 +125,17 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
 
     # Stores nodes that are yet to explode
     avalanche_unhandled = [trader.node_number]
-
-    original = avalanche_unhandled
-
-    avalanche_set = set() #Stores nodes that exploded in the avalanch
-    while len(avalanche_unhandled) > 0:
-        for unhandled in avalanche_unhandled:
-
-
-            avalanche_unhandled =set(avalanche_unhandled)
-            avalanche_unhandled =list(avalanche_unhandled)
-
-            print("Remaining unhandled avalanch nodes")
-            print(avalanche_unhandled)
-
-            neighbours = get_neighbours(avalanche_unhandled[0],network)
-
-            neighbours.remove(original)
-
-            information_per_neighbour = alpha * (avalanche_unhandled[0].info / len(neighbours))
-
-            for neighbour in neighbours:
-                trader_dictionary[neighbour].info += information_per_neighbour
-                if trader_dictionary[neighbour].info >= trader_dictionary[neighbour].info_threshold:
-                    avalanche_unhandled.append(neighbour)
-
-            original = avalanche_unhandled[0]
-
-
-            avalanche_set.add(avalanche_unhandled[0].node_number)
-            avalanche_unhandled.remove(avalanche_unhandled[0].node_number)
-        
-        
-        
-    return avalanche_set,len(avalanche_set)
-
-
-
-
-    
-
+    avalanche_size = 0
+    avalanche_size = neighbour_layer(avalanche_unhandled,[0], trader_dictionary, network, alpha, avalanche_size)
+    # print("avalanche size handle")
+    # print(avalanche_size)
+    return avalanche_size
 
 def distribute_info(trader_dictionary, network,max_info):
 
     """Distributes info after randomly selecting node (that exceeds the threshold)"""
 
+    avalanche_counter_current_time = []
 
     add_global_info(trader_dictionary,max_info) #Adding global info
 
@@ -110,18 +144,13 @@ def distribute_info(trader_dictionary, network,max_info):
     random.shuffle(keys)
     
     for key in keys:
-        
+      
         if trader_dictionary[key].info >= trader_dictionary[key].info_threshold:
-
-            get_neighbours()
             
-            #neighbors = list(network.neighbors(trader.node_number))
-            #total_info_to_distribute = 0.5 * trader.info
-            #info_per_neighbor = total_info_to_distribute / len(neighbors)
-
-    #         for neighbor_node in neighbors:
-    #             info_to_distribute[neighbor_node] += info_per_neighbor
-    #         trader.info = 0
-    # for trader in traders:
-    #     trader.info += info_to_distribute[trader.node_number]
-
+            avalanche_size = handle_avalanche(trader_dictionary[key],trader_dictionary,network,0.5)
+            # print("avalanche size below")
+            # print(avalanche_size)
+            avalanche_counter_current_time.append(avalanche_size)
+            # print(avalanche_counter_current_time)
+            
+    return avalanche_counter_current_time
