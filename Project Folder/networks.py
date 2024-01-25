@@ -3,7 +3,7 @@ import networkx as nx
 from matplotlib.animation import FuncAnimation
 import random
 
-from trader import Trader
+from trader import *
 
 # class Trader:
 
@@ -15,12 +15,12 @@ from trader import Trader
 #         self.info_threshold = 1
 #         self.info = 0
 
-def create_trader_network(num_traders, avg_degree, rewiring_probability):
+def create_trader_network(num_traders, avg_degree, rewiring_probability,percent_fund,percent_chart):
 
     """Creates a small world network of traders"""
 
-    traders = [Trader(i) for i in range(num_traders)]
-    network = nx.watts_strogatz_graph(n=num_traders, k=avg_degree, p=rewiring_probability)
+    traders = create_traders(num_traders, percent_fund, percent_chart)
+    network = nx.watts_strogatz_graph(n=len(traders), k=avg_degree, p=rewiring_probability)
 
     for i, node in enumerate(network.nodes()):
         network.nodes[node]['trader'] = traders[i]
@@ -39,7 +39,10 @@ def display_network(network, trader_dict):
         if node in trader_dict:
             # Assuming you want to display some specific information from trader_dict
             # You can format the label as per your requirement
-            network.nodes[node]['label'] = str(node) + ": " + str(round(trader_dict[node].info,2))
+            network.nodes[node]['label'] = trader_dict[node].type[0]+ ": " + str(node) + ": " + str(round(trader_dict[node].info,2))
+
+            #network.nodes[node]['name'] = trader_dict[node].type[0]
+            
 
     # Drawing the network
     pos = nx.spring_layout(network)  # positions for all nodes
@@ -52,6 +55,7 @@ def display_network(network, trader_dict):
 
     # labels
     nx.draw_networkx_labels(network, pos, labels=nx.get_node_attributes(network, 'label'))
+
 
     plt.show()
 
@@ -128,7 +132,7 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
     # Stores nodes that are yet to explode
     avalanche_unhandled = [trader.node_number]
     avalanche_size = 0
-    avalanche_size = neighbour_layer(avalanche_unhandled,[0], trader_dictionary, network, alpha, avalanche_size)
+    avalanche_size = neighbour_layer(avalanche_unhandled,avalanche_unhandled, trader_dictionary, network, alpha, avalanche_size)
     # print("avalanche size handle")
     # print(avalanche_size)
     return avalanche_size

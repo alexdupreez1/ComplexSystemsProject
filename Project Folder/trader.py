@@ -85,6 +85,7 @@ def global_price_calculate(traders, omega):
     pg = (F/N) * pf_sum + (C/N) * pc_sum + (R/N) * pr_sum + omega
     return pg
 
+
 # # parameter setting in paper
 # fundamental_price = 5000 
 # phi = 2 
