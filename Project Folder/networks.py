@@ -82,7 +82,7 @@ def count_common_elements(list1, list2):
     common_elements = set1.intersection(set2)
     return len(common_elements)
 
-def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size):
+def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size, expoloding_trader_price):
     next_layer = []
     avalanche_size += len(current_layer)
     
@@ -109,7 +109,7 @@ def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, al
                     trader_dictionary[neighbour].info += information_per_neighbour
 
                     if trader_dictionary[neighbour].info >= trader_dictionary[neighbour].info_threshold and trader_dictionary[neighbour].node_number not in previous_layer and trader_dictionary[neighbour].node_number not in current_layer:
-                        
+                        trader_dictionary[neighbour].price = expoloding_trader_price
                         next_layer.append(neighbour)
                         
             trader_dictionary[exploding_node].info = 0
@@ -119,7 +119,7 @@ def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, al
         previous_layer = current_layer.copy()
         next_layer = [item for item in next_layer if item not in current_layer]
         
-        avalanche_size = neighbour_layer(next_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size)
+        avalanche_size = neighbour_layer(next_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size, expoloding_trader_price)
 
    
     return avalanche_size
@@ -133,7 +133,7 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
     avalanche_unhandled = [trader.node_number]
     expoloding_trader_price = trader.price
     avalanche_size = 0
-    avalanche_size = neighbour_layer(avalanche_unhandled,avalanche_unhandled, trader_dictionary, network, alpha, avalanche_size)
+    avalanche_size = neighbour_layer(avalanche_unhandled,avalanche_unhandled, trader_dictionary, network, alpha, avalanche_size, expoloding_trader_price)
     # print("avalanche size handle")
     # print(avalanche_size)
     return avalanche_size
@@ -186,5 +186,7 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, pf = 5000
             # print(avalanche_size)
             avalanche_counter_current_time.append(avalanche_size)
             # print(avalanche_counter_current_time)
+
+    global_prices.append(global_price_calculate(trader_dictionary))
             
-    return avalanche_counter_current_time
+    return avalanche_counter_current_time, global_prices

@@ -72,15 +72,15 @@ def create_traders(num_traders, percent_fund, percent_chart):
 
 
 
-def global_price_calculate(traders, omega):
+def global_price_calculate(traders):
     """
     Calculate the global price
-    Input: traders = a list of all traders
+    Input: traders = a dictionary of all traders
            omega = information-related noises
     """
     epsilon = np.random.uniform(-200,200)
 
-    exponent = 16 * np.mean([trader.info for trader in traders]) 
+    exponent = 16 * np.mean([traders[key].info for key in traders]) 
 
     omega = epsilon * np.exp(exponent)
 
@@ -96,7 +96,7 @@ def global_price_calculate(traders, omega):
 
     # pg = (F/N) * pf_sum + (C/N) * pc_sum + (R/N) * pr_sum + omega
 
-    pg = np.mean([trader.price for trader in traders]) + omega
+    pg = np.mean([traders[key].price for key in traders]) + omega
 
     return pg
 
