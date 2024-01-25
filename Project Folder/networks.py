@@ -131,21 +131,49 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
 
     # Stores nodes that are yet to explode
     avalanche_unhandled = [trader.node_number]
+    expoloding_trader_price = trader.price
     avalanche_size = 0
     avalanche_size = neighbour_layer(avalanche_unhandled,avalanche_unhandled, trader_dictionary, network, alpha, avalanche_size)
     # print("avalanche size handle")
     # print(avalanche_size)
     return avalanche_size
 
-def distribute_info(trader_dictionary, network,max_info):
+def set_trader_prices(keys,trader_dictionary,global_prices, pf=5000):
+
+    ''''Sets the trader prices at each time step depending on what type of trader it is'''
+
+    for key in keys:
+        epsilon = np.random.uniform(-200,200)
+        if(trader_dictionary[key].type == 'chartist'):
+            
+            if(trader_dictionary[key].m >= len(global_prices)):
+
+                pm = np.mean(global_prices)
+            else:
+                pm = np.mean(global_prices[-trader_dictionary[key].m:])
+
+            trader_dictionary[key].decide_price(global_prices[-1], pm,epsilon)
+
+        elif(trader_dictionary[key].type == 'fundamentalist'):
+            
+            trader_dictionary[key].decide_price(global_prices[-1], pf, epsilon)
+
+        else:
+            trader_dictionary[key].decide_price(global_prices[-1])
+
+    return trader_dictionary
+            
+def distribute_info(trader_dictionary, network,max_info,global_prices, pf = 5000):
 
     """Distributes info after randomly selecting node (that exceeds the threshold)"""
+
+    keys = list(trader_dictionary.keys())
+    
+    set_trader_prices(keys,trader_dictionary,global_prices, pf=5000)
 
     avalanche_counter_current_time = []
 
     add_global_info(trader_dictionary,max_info) #Adding global info
-
-    keys = list(trader_dictionary.keys())
 
     random.shuffle(keys)
     
