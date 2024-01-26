@@ -1,0 +1,68 @@
+from networks import *
+import matplotlib.pyplot as plt
+
+
+
+# Trader Network parameters
+num_traders = 250            # Number of traders in the network
+avg_degree = 4               # Average degree of the network
+rewiring_probability = 0.02  # Probability of rewiring a link
+percent_fund = 0.2           # Percent of fundametalists
+percent_chart = 0.8          # Percent of Chartist
+
+# Fundamentalist
+phi = 0.1                    # Price sensitivity parameters
+pf = 5000                    # Fundamentalist's fundamental price
+# Information distribution
+max_info = 0.01              # Maximum information that is distributed at each time step
+alpha = 0.5                  # Fraction of information that will be distributed when active
+global_prices = [5000]       # Global price list with initial price
+
+# Noise terms
+sigma = 200                  # Amplitude of noise
+beta = 1                     # Exponent global price noise
+
+avalanches = []              # List of avalanche sizes at each time step
+
+
+network, trader_dictionary = create_trader_network(num_traders, avg_degree, rewiring_probability,percent_fund,percent_chart, phi)
+
+
+
+for t in range(2000):
+    if t % 500 == 0:
+        print(t)
+        
+    avalanche_counter_current_time, global_prices = distribute_info(trader_dictionary, network,max_info,global_prices,alpha,sigma, beta, pf)
+    avalanches.append(avalanche_counter_current_time)
+
+
+
+# Flatten the list of lists and sort to find the 10 highest avalanches
+flat_avalanches = [size for day in avalanches for size in day]
+flat_avalanches.sort(reverse=True)
+top_10_avalanches = flat_avalanches[:10]
+
+# Find the days for these top 10 avalanches
+top_10_days = []
+for high_avalanche in top_10_avalanches:
+    for day_index, day in enumerate(avalanches):
+        if high_avalanche in day:
+            top_10_days.append(day_index)
+            break  # Assuming each avalanche size is unique
+
+# Plotting
+plt.figure(figsize=(40, 10))
+
+# Highlighting the days with the top 10 avalanches
+for day in set(top_10_days):  # Using set to avoid duplicate days
+    plt.axvline(x=day+1, color='red', label='Top 10 Avalanches' if day == top_10_days[0] else "")
+
+plt.plot(global_prices, linewidth=3)
+
+plt.xlabel('Days')
+plt.ylabel('Global Prices / Avalanche Size')
+plt.title('Top 10 Avalanches and Global Prices Over Time')
+plt.legend()
+plt.savefig('top_10_avalanches.png')
+plt.show()

@@ -15,11 +15,11 @@ from trader import *
 #         self.info_threshold = 1
 #         self.info = 0
 
-def create_trader_network(num_traders, avg_degree, rewiring_probability,percent_fund,percent_chart):
+def create_trader_network(num_traders, avg_degree, rewiring_probability,percent_fund,percent_chart, phi):
 
     """Creates a small world network of traders"""
 
-    traders = create_traders(num_traders, percent_fund, percent_chart)
+    traders = create_traders(num_traders, percent_fund, percent_chart, phi)
     network = nx.watts_strogatz_graph(n=len(traders), k=avg_degree, p=rewiring_probability)
 
     for i, node in enumerate(network.nodes()):
@@ -138,21 +138,23 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
     # print(avalanche_size)
     return avalanche_size
 
-def set_trader_prices(keys,trader_dictionary,global_prices, pf=5000):
+def set_trader_prices(keys,trader_dictionary,global_prices,sigma, pf=5000):
 
     ''''Sets the trader prices at each time step depending on what type of trader it is'''
 
     for key in keys:
-        epsilon = np.random.uniform(-200,200)
+        epsilon = np.random.uniform(-sigma,sigma)
         if(trader_dictionary[key].type == 'chartist'):
             
             if(trader_dictionary[key].m >= len(global_prices)):
 
                 pm = np.mean(global_prices)
+                m_current = len(global_prices)
             else:
                 pm = np.mean(global_prices[-trader_dictionary[key].m:])
+                m_current = trader_dictionary[key].m
 
-            trader_dictionary[key].decide_price(global_prices[-1], pm,epsilon)
+            trader_dictionary[key].decide_price(global_prices[-1], pm,epsilon, m_current)
 
         elif(trader_dictionary[key].type == 'fundamentalist'):
             
@@ -163,13 +165,13 @@ def set_trader_prices(keys,trader_dictionary,global_prices, pf=5000):
 
     return trader_dictionary
             
-def distribute_info(trader_dictionary, network,max_info,global_prices, pf = 5000):
+def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, sigma, beta, pf):
 
     """Distributes info after randomly selecting node (that exceeds the threshold)"""
 
     keys = list(trader_dictionary.keys())
     
-    set_trader_prices(keys,trader_dictionary,global_prices, pf=5000)
+    set_trader_prices(keys,trader_dictionary,global_prices,sigma, pf)
 
     avalanche_counter_current_time = []
 
@@ -181,12 +183,12 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, pf = 5000
       
         if trader_dictionary[key].info >= trader_dictionary[key].info_threshold:
             
-            avalanche_size = handle_avalanche(trader_dictionary[key],trader_dictionary,network,0.5)
+            avalanche_size = handle_avalanche(trader_dictionary[key],trader_dictionary,network,alpha)
             # print("avalanche size below")
             # print(avalanche_size)
             avalanche_counter_current_time.append(avalanche_size)
             # print(avalanche_counter_current_time)
 
-    global_prices.append(global_price_calculate(trader_dictionary))
+    global_prices.append(global_price_calculate(trader_dictionary, sigma, beta))
             
     return avalanche_counter_current_time, global_prices

@@ -8,14 +8,14 @@ class Trader():
         self.node_number = node_number
         self.type = None
         self.info_threshold = 1
-        self.info = 0
+        self.info = np.random.uniform(0,1)
     
 
 class Fundamentalist(Trader):
-    def __init__(self,node_number):
+    def __init__(self,node_number, phi):
         super().__init__(node_number)
         self.type = 'fundamentalist'    
-        self.phi = np.abs(np.random.normal(0,1)) #The paper uses 2 for phi!!
+        self.phi = phi #np.abs(np.random.normal(0,1)) #The paper uses 2 for phi!!
     def decide_price(self, pt, pf, epsilon):
         """ 
         A Fundamentalist decides price based on the discrepancy from a fundamental value.
@@ -31,13 +31,13 @@ class Chartist(Trader):
         self.type = 'chartist'   
         self.m = np.random.randint(1,90) #Make this normally distributed later
         self.kappa = np.random.normal(0,1) 
-    def decide_price(self, pt, pm, epsilon):
+    def decide_price(self, pt, pm, epsilon, m_current):
         """ 
         A Chartist decides price based on the average price of M past prices.
         Input: pt = price of current timestep, pm = average price of last M-values, M = the length of restrospective sight
                k = sensitivity of forecasts to past M prices, epsilon = noise
         """
-        self.price = pt + self.kappa * (pt - pm)/self.m + epsilon
+        self.price = pt + self.kappa * ( (pt - pm)/m_current ) + epsilon
 
 class RandomTrader(Trader):
     def __init__(self,node_number):
@@ -50,7 +50,7 @@ class RandomTrader(Trader):
         """
         self.price = random.uniform(0, pt)
 
-def create_traders(num_traders, percent_fund, percent_chart):
+def create_traders(num_traders, percent_fund, percent_chart,phi):
     """Create a trader object list with each type of trader owning certain percentage."""
 
     num_fund = int(num_traders * percent_fund)
@@ -62,7 +62,7 @@ def create_traders(num_traders, percent_fund, percent_chart):
         random.shuffle(trader_types)
         trader_type = trader_types.pop()
         if trader_type == 'fundamentalist':
-            traders.append(Fundamentalist(i))
+            traders.append(Fundamentalist(i,phi))
         if trader_type == 'chartist':
             traders.append(Chartist(i))
         if trader_type == 'random trader':
@@ -72,15 +72,15 @@ def create_traders(num_traders, percent_fund, percent_chart):
 
 
 
-def global_price_calculate(traders):
+def global_price_calculate(traders, sigma, beta):
     """
     Calculate the global price
     Input: traders = a dictionary of all traders
            omega = information-related noises
     """
-    epsilon = np.random.uniform(-100,100)
+    epsilon = np.random.uniform(-sigma,sigma)
 
-    exponent = 1 * np.mean([traders[key].info for key in traders]) 
+    exponent = beta * np.mean([traders[key].info for key in traders]) 
 
     # print("EXPONENT -->", str(exponent))
 
