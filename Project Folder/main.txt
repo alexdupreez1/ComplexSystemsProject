@@ -1,68 +1,106 @@
 from networks import *
 import matplotlib.pyplot as plt
 
+################################################3
 
 
 # Trader Network parameters
-num_traders = 250            # Number of traders in the network
+num_traders = 1000            # Number of traders in the network
 avg_degree = 4               # Average degree of the network
-rewiring_probability = 0.02  # Probability of rewiring a link
-percent_fund = 0.2           # Percent of fundametalists
+rewiring_probability = 0.02   # Probability of rewiring a link
+percent_fund = 0.2         # Percent of fundametalists
 percent_chart = 0.8          # Percent of Chartist
 
 # Fundamentalist
-phi = 0.1                    # Price sensitivity parameters
+phi = 0.2                    # Price sensitivity parameters
 pf = 5000                    # Fundamentalist's fundamental price
+
 # Information distribution
 max_info = 0.01              # Maximum information that is distributed at each time step
-alpha = 0.5                  # Fraction of information that will be distributed when active
+alpha = 0.9                 # Fraction of information that will be distributed when active
 global_prices = [5000]       # Global price list with initial price
 
 # Noise terms
-sigma = 200                  # Amplitude of noise
+sigma = 0                  # Amplitude of noise
 beta = 1                     # Exponent global price noise
 
-avalanches = []              # List of avalanche sizes at each time step
+avalanches = [] 
+avalanche_price_deltas = []             # List of avalanche sizes at each time step
 
 
+
+#######################################
 network, trader_dictionary = create_trader_network(num_traders, avg_degree, rewiring_probability,percent_fund,percent_chart, phi)
 
 
 
-for t in range(2000):
-    if t % 500 == 0:
+
+
+########################################
+info_list = [[],[]]
+
+steps = 5000
+
+for t in range(steps):
+
+    if t % int(steps/50) == 0:
         print(t)
         
-    avalanche_counter_current_time, global_prices = distribute_info(trader_dictionary, network,max_info,global_prices,alpha,sigma, beta, pf)
+    avalanche_counter_current_time, avalanche_price_delta_current_time ,global_prices, info_list = distribute_info(trader_dictionary, network,max_info,global_prices,alpha,sigma, beta, pf, info_list)
     avalanches.append(avalanche_counter_current_time)
+    avalanche_price_deltas.append(avalanche_price_delta_current_time)
 
 
 
-# Flatten the list of lists and sort to find the 10 highest avalanches
-flat_avalanches = [size for day in avalanches for size in day]
-flat_avalanches.sort(reverse=True)
-top_10_avalanches = flat_avalanches[:10]
 
-# Find the days for these top 10 avalanches
-top_10_days = []
-for high_avalanche in top_10_avalanches:
-    for day_index, day in enumerate(avalanches):
-        if high_avalanche in day:
-            top_10_days.append(day_index)
-            break  # Assuming each avalanche size is unique
 
-# Plotting
-plt.figure(figsize=(40, 10))
+###########################################################
 
-# Highlighting the days with the top 10 avalanches
-for day in set(top_10_days):  # Using set to avoid duplicate days
-    plt.axvline(x=day+1, color='red', label='Top 10 Avalanches' if day == top_10_days[0] else "")
 
-plt.plot(global_prices, linewidth=3)
 
-plt.xlabel('Days')
-plt.ylabel('Global Prices / Avalanche Size')
-plt.title('Top 10 Avalanches and Global Prices Over Time')
-plt.legend()
-plt.savefig('top_10_avalanches.png')
+global_prices_sliced = global_prices
+info_list_sliced = info_list[0]
+
+# Assuming 'global_prices' is a list with the global prices per day
+# and 'avalanches' is a list of lists with avalanche sizes for each day
+
+# Sum the sizes of avalanches for each day to get the daily volume
+avalanches_summed = [sum(day) for day in avalanches]
+
+avalanches_summed_sliced = avalanches_summed
+
+
+# Create subplots with shared x-axis
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(40, 15), sharex=True, gridspec_kw={'height_ratios': [2,1, 1]})
+ax1.plot(global_prices_sliced, linewidth=1)
+# ax1.axhline(y=5000, color='red', label='Fundamental price')
+ax1.set_ylabel('Global Prices')
+ax1.set_title('Global Prices and Avalanche Volume Over Time')
+ax1.legend()
+# Line plot for global prices on the first subplot
+ax2.plot(info_list_sliced, linewidth=3)
+ax2.set_ylabel('Global info')
+ax2.set_title('Global info and avalanche volume')
+ax2.legend()
+
+# # Black vertical lines every 10 days on the first subplot
+# for day in range(len(global_prices)):
+#     if day % 10 == 0:
+#         ax1.axvline(x=day, color='black', linewidth=0.5)
+
+# Define bin edges for the histogram (one bin every 10 days)
+bin_edges = np.arange(0, len(avalanches_summed_sliced) + 1, 1)
+
+# Histogram (volume) for avalanche volume on the second subplot
+ax3.hist(range(len(avalanches_summed_sliced)), bins=bin_edges, weights=avalanches_summed_sliced, color='gray')
+ax3.set_ylabel('Avalanche Volume')
+ax3.set_xlabel('Days')
+ax3.set_yscale('log')  # Set y-axis to logarithmic scale
+ax1.set_xticks(np.arange(0.5, len(global_prices_sliced)+0.5, 2))  # Set x-axis ticks every 10 days
+
+# Tight layout to ensure a clean look without overlapping elements
+plt.tight_layout()
+
+
+# Show the figure
 plt.show()
