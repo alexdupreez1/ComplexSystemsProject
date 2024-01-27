@@ -72,15 +72,21 @@ def get_neighbours(trader,network):
 def add_global_info(trader_dictionary,max_info):
 
     """Adds global information to the network"""
+    keys = list(trader_dictionary.keys())
+    information_list = [trader_dictionary[key].info for key in keys]
+
+    max_info_traders = np.max(information_list)
 
     for key in trader_dictionary:
-        trader_dictionary[key].info += random.uniform(0,max_info) #Max info is the maximum amount of info that can be distirbuted into the network
+        trader_dictionary[key].info += random.uniform(0 , 1 - max_info_traders) #Max info is the maximum amount of info that can be distirbuted into the network
 
 def count_common_elements(list1, list2):
     set1 = set(list1)
     set2 = set(list2)
     common_elements = set1.intersection(set2)
     return len(common_elements)
+
+
 
 def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size, expoloding_trader_price):
     next_layer = []
@@ -165,16 +171,16 @@ def set_trader_prices(keys,trader_dictionary,global_prices,sigma, pf=5000):
 
     return trader_dictionary
             
-def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, sigma, beta, pf):
+def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, sigma, beta, pf, info_list):
 
     """Distributes info after randomly selecting node (that exceeds the threshold)"""
-
+    
     keys = list(trader_dictionary.keys())
     
     set_trader_prices(keys,trader_dictionary,global_prices,sigma, pf)
 
     avalanche_counter_current_time = []
-
+    avalanche_price_delta_list = []
     add_global_info(trader_dictionary,max_info) #Adding global info
 
     random.shuffle(keys)
@@ -187,8 +193,16 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, si
             # print("avalanche size below")
             # print(avalanche_size)
             avalanche_counter_current_time.append(avalanche_size)
+            avalanche_price_delta = trader_dictionary[key].price - global_prices[-1]
+            avalanche_price_delta_list.append(avalanche_price_delta)
             # print(avalanche_counter_current_time)
 
     global_prices.append(global_price_calculate(trader_dictionary, sigma, beta))
-            
-    return avalanche_counter_current_time, global_prices
+    information_list = [trader_dictionary[key].info for key in keys]
+
+    average_info = np.mean(information_list)
+    max_info = np.max(information_list)
+
+    info_list[0].append(average_info)
+    info_list[1].append(max_info)
+    return avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list

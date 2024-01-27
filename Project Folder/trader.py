@@ -94,11 +94,11 @@ def global_price_calculate(traders, sigma, beta):
     # N = F + C + R 
 
     
-    # pf_sum = sum(trader.price for trader in traders if trader.type =='fundamentalist')
-    # pc_sum = sum(trader.price for trader in traders if trader.type =='chartist')
-    # pr_sum = sum(trader.price for trader in traders if trader.type =='random trader')
+    # pf_sum = sum(traders[trader].price for trader in traders if traders[trader].type =='fundamentalist')
+    # pc_sum = sum(traders[trader].price for trader in traders if traders[trader].type =='chartist')
+    # pr_sum = sum(traders[trader].price for trader in traders if traders[trader].type =='random trader')
 
-    # pg = (F/N) * pf_sum + (C/N) * pc_sum + (R/N) * pr_sum + omega
+    # pg = ((F/N**2) * pf_sum )+( (C/N**2) * pc_sum )+ ((R/N**2) * pr_sum) + omega
 
     pg = np.mean([traders[key].price for key in traders]) + omega
 
