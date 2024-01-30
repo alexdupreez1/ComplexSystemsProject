@@ -15,7 +15,7 @@ class Fundamentalist(Trader):
     def __init__(self,node_number, phi):
         super().__init__(node_number)
         self.type = 'fundamentalist'    
-        self.phi = np.random.uniform(1,1.5) #The paper uses 2 for phi!!
+        self.phi = phi#np.abs(np.random.normal(0,1)) #The paper uses 2 for phi!!
         #self.pf = np.random.uniform(1000,5000)
     def decide_price(self, pt, pf, epsilon):
         """ 
@@ -79,7 +79,7 @@ def global_price_calculate(traders, sigma, beta):
     Input: traders = a dictionary of all traders
            omega = information-related noises
     """
-    epsilon = np.random.uniform(-10,10)
+    epsilon = np.random.uniform(-1.5,1.5)
 
     exponent = beta * np.mean([traders[key].info for key in traders]) 
 
