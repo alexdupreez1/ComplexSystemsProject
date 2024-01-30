@@ -117,10 +117,12 @@ def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, al
             # Layer 2 has been added to avalanche_unhandled
             
             for neighbour in neighbours:
-                if neighbour not in previous_layer and neighbour not in current_layer:
+                if neighbour not in previous_layer and neighbour not in current_layer and trader_dictionary[exploding_node].type != 'random':
                     
                     trader_dictionary[neighbour].info += information_per_neighbour
-                    trader_dictionary[neighbour].price = expoloding_trader_price
+
+                    if trader_dictionary[neighbour].type != 'random':
+                        trader_dictionary[neighbour].price = expoloding_trader_price
 
                     if trader_dictionary[neighbour].info >= trader_dictionary[neighbour].info_threshold and trader_dictionary[neighbour].node_number not in previous_layer and trader_dictionary[neighbour].node_number not in current_layer:
                         next_layer.append(neighbour)
