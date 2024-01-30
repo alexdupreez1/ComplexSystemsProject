@@ -214,3 +214,23 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, si
     info_list[0].append(average_info)
     info_list[1].append(max_info)
     return avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list
+
+def run_simulation(trader_dictionary, network,max_info,global_prices,alpha,sigma, beta, pf, info_list,avalanches, num_days):
+
+    '''Generates a time series as well as any other necessary outputs from the simulation'''
+
+        #Run simulation
+    for t in range(num_days):
+ 
+        avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list = distribute_info(trader_dictionary, network,max_info,global_prices,alpha,sigma, beta, pf, info_list)
+        avalanches.append(avalanche_counter_current_time)
+    
+        sum_avalanch_per_day = []
+
+    for day in avalanches:
+
+        sum = np.sum(day)
+        sum_avalanch_per_day.append(sum)
+
+    return avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list, sum_avalanch_per_day 
+
