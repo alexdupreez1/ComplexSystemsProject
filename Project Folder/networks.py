@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from matplotlib.animation import FuncAnimation
 import random
+from IPython.display import clear_output
 
 from trader import *
 
@@ -21,7 +22,7 @@ def create_trader_network(num_traders, avg_degree, rewiring_probability,percent_
 
     traders = create_traders(num_traders, percent_fund, percent_chart, phi)
     network = nx.watts_strogatz_graph(n=len(traders), k=avg_degree, p=rewiring_probability)
-
+    
     for i, node in enumerate(network.nodes()):
         network.nodes[node]['trader'] = traders[i]
 
@@ -29,6 +30,19 @@ def create_trader_network(num_traders, avg_degree, rewiring_probability,percent_
 
     return network, trader_dictionary
 
+def create_trader_network_barabasi(num_traders,percent_fund,percent_chart, phi):
+
+    """Creates a small world network of traders"""
+
+    traders = create_traders(num_traders, percent_fund, percent_chart, phi)
+    network = nx.barabasi_albert_graph(num_traders, 3)
+    
+    for i, node in enumerate(network.nodes()):
+        network.nodes[node]['trader'] = traders[i]
+
+    trader_dictionary = {trader.node_number: trader for trader in traders}
+
+    return network, trader_dictionary
 
 def display_network(network, trader_dict):
     """Plots the network structure with additional information from trader_dict."""
@@ -217,13 +231,20 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, si
     info_list[1].append(max_info)
     return avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list
 
-def run_simulation(trader_dictionary, network,max_info,global_prices,alpha,sigma, beta, pf, info_list,avalanches, num_days):
+def run_simulation(network_params, network,max_info,global_prices,alpha,sigma, beta, pf, info_list,avalanches, num_days):
 
     '''Generates a time series as well as any other necessary outputs from the simulation'''
-
-        #Run simulation
+    if network == 'small_world':
+        network, trader_dictionary = create_trader_network(network_params[0], network_params[1], network_params[2],network_params[3],network_params[4], network_params[5])
+    if network == 'barabasi':
+        network, trader_dictionary = create_trader_network_barabasi(network_params[0],network_params[3],network_params[4], network_params[5])
+    # run simulation
     for t in range(num_days):
- 
+        if t+1 % int(num_days/10) == 0:
+            clear_output(wait=True)
+            print(f"Simulating timestep:{t+1}/{num_days}")
+            
+            
         avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list = distribute_info(trader_dictionary, network,max_info,global_prices,alpha,sigma, beta, pf, info_list)
         avalanches.append(avalanche_counter_current_time)
     
