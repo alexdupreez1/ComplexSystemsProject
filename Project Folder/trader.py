@@ -15,7 +15,8 @@ class Fundamentalist(Trader):
     def __init__(self,node_number, phi):
         super().__init__(node_number)
         self.type = 'fundamentalist'    
-        self.phi = phi #np.abs(np.random.normal(0,1)) #The paper uses 2 for phi!!
+        self.phi = phi#np.abs(np.random.normal(0,1)) #The paper uses 2 for phi!!
+        #self.pf = np.random.uniform(1000,5000)
     def decide_price(self, pt, pf, epsilon):
         """ 
         A Fundamentalist decides price based on the discrepancy from a fundamental value.
@@ -37,7 +38,7 @@ class Chartist(Trader):
         Input: pt = price of current timestep, pm = average price of last M-values, M = the length of restrospective sight
                k = sensitivity of forecasts to past M prices, epsilon = noise
         """
-        self.price = pt + self.kappa * ( (pt - pm)/m_current ) + epsilon
+        self.price = pt + self.kappa * ((pt - pm)/m_current ) + epsilon
 
 class RandomTrader(Trader):
     def __init__(self,node_number):
@@ -78,7 +79,7 @@ def global_price_calculate(traders, sigma, beta):
     Input: traders = a dictionary of all traders
            omega = information-related noises
     """
-    epsilon = np.random.uniform(-sigma,sigma)
+    epsilon = np.random.uniform(-1.5,1.5)
 
     exponent = beta * np.mean([traders[key].info for key in traders]) 
 

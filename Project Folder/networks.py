@@ -39,7 +39,7 @@ def display_network(network, trader_dict):
         if node in trader_dict:
             # Assuming you want to display some specific information from trader_dict
             # You can format the label as per your requirement
-            network.nodes[node]['label'] = trader_dict[node].type[0]+ ": " + str(node) + ": " + str(round(trader_dict[node].info,2))
+            network.nodes[node]['label'] = trader_dict[node].type[0] + ": " + str(round(trader_dict[node].info,2))
 
             #network.nodes[node]['name'] = trader_dict[node].type[0]
             
@@ -55,8 +55,13 @@ def display_network(network, trader_dict):
 
     # labels
     nx.draw_networkx_labels(network, pos, labels=nx.get_node_attributes(network, 'label'))
-
-
+    #keys = []
+    #for key in list(trader_dict.keys()):
+        #keys.append(key)
+    #price_list = [trader_dict[key].price for key in keys]
+    #average = np.average(price_list)
+    #plt.text(0.5, 1.1, "Average price: " +str(average), ha='center', va='center', transform=plt.gca().transAxes,
+    #bbox=dict(facecolor='white', alpha=0.7, edgecolor='gray'))
     plt.show()
 
     
@@ -78,7 +83,9 @@ def add_global_info(trader_dictionary,max_info):
     max_info_traders = np.max(information_list)
 
     for key in trader_dictionary:
-        trader_dictionary[key].info += random.uniform(0 , 1 - max_info_traders) #Max info is the maximum amount of info that can be distirbuted into the network
+        trader_dictionary[key].info += random.uniform(0 , max_info) #Max info is the maximum amount of info that can be distirbuted into the network
+
+
 
 def count_common_elements(list1, list2):
     set1 = set(list1)
@@ -113,9 +120,9 @@ def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, al
                 if neighbour not in previous_layer and neighbour not in current_layer:
                     
                     trader_dictionary[neighbour].info += information_per_neighbour
+                    trader_dictionary[neighbour].price = expoloding_trader_price
 
                     if trader_dictionary[neighbour].info >= trader_dictionary[neighbour].info_threshold and trader_dictionary[neighbour].node_number not in previous_layer and trader_dictionary[neighbour].node_number not in current_layer:
-                        trader_dictionary[neighbour].price = expoloding_trader_price
                         next_layer.append(neighbour)
                         
             trader_dictionary[exploding_node].info = 0
@@ -181,6 +188,7 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, si
 
     avalanche_counter_current_time = []
     avalanche_price_delta_list = []
+
     add_global_info(trader_dictionary,max_info) #Adding global info
 
     random.shuffle(keys)
