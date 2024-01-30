@@ -79,7 +79,7 @@ def global_price_calculate(traders, sigma, beta):
     Input: traders = a dictionary of all traders
            omega = information-related noises
     """
-    epsilon = np.random.uniform(-1.5,1.5)
+    epsilon = np.random.uniform(-10,10)
 
     exponent = beta * np.mean([traders[key].info for key in traders]) 
 
