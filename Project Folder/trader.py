@@ -49,7 +49,7 @@ class RandomTrader(Trader):
         A random trader decides price without previous or fundamental price.
         Input: pt = price of current timestep
         """
-        self.price = random.uniform(0, pt)
+        self.price = random.uniform(0.8*pt, 1.2*pt)
 
 def create_traders(num_traders, percent_fund, percent_chart,phi):
     """Create a trader object list with each type of trader owning certain percentage."""

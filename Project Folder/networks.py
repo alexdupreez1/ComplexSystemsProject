@@ -231,13 +231,13 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, si
     info_list[1].append(max_info)
     return avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list
 
-def run_simulation(network_params, network,max_info,global_prices,alpha,sigma, beta, pf, info_list,avalanches, num_days):
+def run_simulation(network_params,network,max_info,global_prices,alpha,sigma, beta, pf, info_list,avalanches, num_days):
 
     '''Generates a time series as well as any other necessary outputs from the simulation'''
     if network == 'small_world':
         network, trader_dictionary = create_trader_network(network_params[0], network_params[1], network_params[2],network_params[3],network_params[4], network_params[5])
     if network == 'barabasi':
-        network, trader_dictionary = create_trader_network_barabasi(network_params[0],network_params[3],network_params[4], network_params[5])
+        network, trader_dictionary = create_trader_network_barabasi(network_params[0],network_params[3],network_params[4], network_params[5])                                                          
     # run simulation
     for t in range(num_days):
         if t+1 % int(num_days/10) == 0:
@@ -255,5 +255,5 @@ def run_simulation(network_params, network,max_info,global_prices,alpha,sigma, b
         sum = np.sum(day)
         sum_avalanch_per_day.append(sum)
 
-    return avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list, sum_avalanch_per_day 
+    return avalanches,avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list, sum_avalanch_per_day 
 
