@@ -12,6 +12,7 @@ class Trader():
     
 
 class Fundamentalist(Trader):
+    """A class to represent a fundamentalist trader"""
     def __init__(self,node_number, phi):
         super().__init__(node_number)
         self.type = 'fundamentalist'    
@@ -20,13 +21,17 @@ class Fundamentalist(Trader):
     def decide_price(self, pt, pf, epsilon):
         """ 
         A Fundamentalist decides price based on the discrepancy from a fundamental value.
-        Input: pt = price of current timestep, pf = fundamental price, 
-               phi = weight of discrepancy, epsilon = noise
+
+        Input: pt = price of current timestep 
+               pf = fundamental price 
+               phi = weight of discrepancy 
+               epsilon = noise
         """
 
         self.price = pt + self.phi * (pf - pt) + epsilon
 
 class Chartist(Trader):
+    """A class to represent a chartist trader"""
     def __init__(self,node_number):
         super().__init__(node_number)
         self.type = 'chartist'   
@@ -35,12 +40,15 @@ class Chartist(Trader):
     def decide_price(self, pt, pm, epsilon, m_current):
         """ 
         A Chartist decides price based on the average price of M past prices.
-        Input: pt = price of current timestep, pm = average price of last M-values, M = the length of restrospective sight
+        Input: pt = price of current timestep, 
+               pm = average price of last M-values, 
+               M = the length of restrospective sight
                k = sensitivity of forecasts to past M prices, epsilon = noise
         """
         self.price = pt + self.kappa * ((pt - pm)/m_current ) + epsilon
 
 class RandomTrader(Trader):
+    """A class to represent a random trader"""
     def __init__(self,node_number):
         super().__init__(node_number)
         self.type = 'random trader'
@@ -52,13 +60,15 @@ class RandomTrader(Trader):
         self.price = random.uniform(0.8*pt, 1.2*pt)
 
 def create_traders(num_traders, percent_fund, percent_chart,phi):
-    """Create a trader object list with each type of trader owning certain percentage."""
+    """Create a trader dictionary with a certain fraction of each type of trader"""
 
     num_fund = int(num_traders * percent_fund)
     num_chart = int(num_traders * percent_chart)
     num_rand = num_traders - num_fund - num_chart
     trader_types = ['fundamentalist'] * num_fund + ['chartist'] * num_chart + ['random trader'] * num_rand
-    traders = [] # save all trader objets with different types
+    traders = [] 
+
+    # generate the different fractions of traders
     for i in range(num_traders):
         random.shuffle(trader_types)
         trader_type = trader_types.pop()
@@ -74,45 +84,21 @@ def create_traders(num_traders, percent_fund, percent_chart,phi):
 
 
 def global_price_calculate(traders, sigma, beta):
-    """
-    Calculate the global price
-    Input: traders = a dictionary of all traders
-           omega = information-related noises
-    """
+    """ 
+        Calculate the global price as a function of the traders's prices.
+        Input: pt = price of current timestep, 
+               pm = average price of last M-values, 
+               M = the amount of steps considered
+               k = sensitivity parameter
+               epsilon = noise
+        """
     epsilon = np.random.uniform(-1.5,1.5)
 
     exponent = beta * np.mean([traders[key].info for key in traders]) 
 
-    # print("EXPONENT -->", str(exponent))
-
     omega = epsilon * np.exp(exponent)
 
-    # print("OMEGA", omega)
-
-    # F = sum(1 for key in traders if traders[key].type =='fundamentalist')
-    # C = sum(1 for key in traders if traders[key].type =='chartist')
-    # R = sum(1 for key in traders if traders[key].type =='random trader')
-    # N = F + C + R 
-
-    
-    # pf_sum = sum(traders[trader].price for trader in traders if traders[trader].type =='fundamentalist')
-    # pc_sum = sum(traders[trader].price for trader in traders if traders[trader].type =='chartist')
-    # pr_sum = sum(traders[trader].price for trader in traders if traders[trader].type =='random trader')
-
-    # pg = ((F/N**2) * pf_sum )+( (C/N**2) * pc_sum )+ ((R/N**2) * pr_sum) + omega
-
+    # average price of all traders.
     pg = np.mean([traders[key].price for key in traders]) + omega
 
     return pg
-
-
-# # parameter setting in paper
-# fundamental_price = 5000 
-# phi = 2 
-# sigma = 200 
-# epsilon = random.uniform(-sigma, sigma)
-# kappa = 2    #normal distribution?
-# M = random.uniform(0, 90) # time step may be smaller than M ?
-# # I_average ?#
-# beta = 16 # exponent of global noise term
-# omega = epsilon * np.exp(beta * I_average)

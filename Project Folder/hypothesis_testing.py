@@ -19,12 +19,15 @@ def power_law_hypothesis_test(avalanches):
 
 def multiple_runs_power_law_hypothesis_test(fundamental_percentage_list, network_params, networks ,max_info,global_prices,alpha,sigma, beta, pf, info_list,avalanches, num_days):
 
+    """Performs a hypothesis test to compare the likelihood of an exponential distribution and a power law multiple times"""
+
+
     p_list = []
     R_list = []
     trader_configuration_list = []
 
     for funadamental_percentage in fundamental_percentage_list:
-
+        global_prices = [5000]
 
         chartist_percentage = 1-funadamental_percentage
         network_params[3] = funadamental_percentage

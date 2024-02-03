@@ -3,18 +3,9 @@ import networkx as nx
 from matplotlib.animation import FuncAnimation
 import random
 from IPython.display import clear_output
-
 from trader import *
 
-# class Trader:
 
-#     """Defining a class for a trader object"""
-
-
-#     def __init__(self, node_number):
-#         self.node_number = node_number
-#         self.info_threshold = 1
-#         self.info = 0
 
 def create_trader_network(num_traders, avg_degree, rewiring_probability,percent_fund,percent_chart, phi):
 
@@ -47,15 +38,12 @@ def create_trader_network_barabasi(num_traders,percent_fund,percent_chart, phi):
 def display_network(network, trader_dict):
     """Plots the network structure with additional information from trader_dict."""
     
-    # Update node attributes based on trader_dict
+    # Loop over the nodes and link them to a trader
     for node in network.nodes():
      
         if node in trader_dict:
-            # Assuming you want to display some specific information from trader_dict
-            # You can format the label as per your requirement
             network.nodes[node]['label'] = trader_dict[node].type[0] + ": " + str(round(trader_dict[node].info,2))
 
-            #network.nodes[node]['name'] = trader_dict[node].type[0]
             
 
     # Drawing the network
@@ -67,15 +55,8 @@ def display_network(network, trader_dict):
     # edges
     nx.draw_networkx_edges(network, pos, edge_color='red')
 
-    # labels
     nx.draw_networkx_labels(network, pos, labels=nx.get_node_attributes(network, 'label'))
-    #keys = []
-    #for key in list(trader_dict.keys()):
-        #keys.append(key)
-    #price_list = [trader_dict[key].price for key in keys]
-    #average = np.average(price_list)
-    #plt.text(0.5, 1.1, "Average price: " +str(average), ha='center', va='center', transform=plt.gca().transAxes,
-    #bbox=dict(facecolor='white', alpha=0.7, edgecolor='gray'))
+    
     plt.show()
 
     
@@ -83,8 +64,8 @@ def get_neighbours(trader,network):
 
     """Gets the neighbours of a given node"""
 
-
-    neighbors = list(network.neighbors(trader.node_number)) #A list of neighbour node numbers
+    # get the neighbouring nodes
+    neighbors = list(network.neighbors(trader.node_number)) 
 
     return neighbors
 
@@ -94,11 +75,9 @@ def add_global_info(trader_dictionary,max_info):
     keys = list(trader_dictionary.keys())
     information_list = [trader_dictionary[key].info for key in keys]
 
-    max_info_traders = np.max(information_list)
-
+    # distribute a randomly distributed amount of info to all traders
     for key in trader_dictionary:
-        trader_dictionary[key].info += random.uniform(0 , max_info) #Max info is the maximum amount of info that can be distirbuted into the network
-
+        trader_dictionary[key].info += random.uniform(0 , max_info) 
 
 
 def count_common_elements(list1, list2):
@@ -108,12 +87,14 @@ def count_common_elements(list1, list2):
     return len(common_elements)
 
 
-
 def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size, expoloding_trader_price):
+    
+    """Handles the current layer of active traders"""
+    
     next_layer = []
     avalanche_size += len(current_layer)
     
-    # current layer intially just node 0
+    # loop over all nodes that are in the current layer
     if len(current_layer) > 0:
         for exploding_node in current_layer:
   
@@ -128,7 +109,7 @@ def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, al
                   
                     information_per_neighbour = alpha * (trader_dictionary[exploding_node].info / (len(neighbours)-common_neighbours))
             
-            # Layer 2 has been added to avalanche_unhandled
+            # next layer has been added to avalanche_unhandled
             
             for neighbour in neighbours:
                 if neighbour not in previous_layer and neighbour not in current_layer and trader_dictionary[exploding_node].type != 'random':
@@ -143,11 +124,13 @@ def neighbour_layer(current_layer,previous_layer, trader_dictionary, network, al
                         
             trader_dictionary[exploding_node].info = 0
 
+
         current_layer = set(current_layer)
         current_layer = list(current_layer)
         previous_layer = current_layer.copy()
         next_layer = [item for item in next_layer if item not in current_layer]
         
+        # recursive call to handle the next layer in the avalanche
         avalanche_size = neighbour_layer(next_layer,previous_layer, trader_dictionary, network, alpha, avalanche_size, expoloding_trader_price)
 
    
@@ -158,13 +141,14 @@ def handle_avalanche(trader,trader_dictionary,network, alpha):
 
     """Handles complete avalanch from the first node that explodes after info was added to it"""
 
-    # Stores nodes that are yet to explode
+    # initializes the initial "parent" node
     avalanche_unhandled = [trader.node_number]
     expoloding_trader_price = trader.price
     avalanche_size = 0
+
+    # call to handle current and consecutive layers originating from the "parent"
     avalanche_size = neighbour_layer(avalanche_unhandled,avalanche_unhandled, trader_dictionary, network, alpha, avalanche_size, expoloding_trader_price)
-    # print("avalanche size handle")
-    # print(avalanche_size)
+ 
     return avalanche_size
 
 def set_trader_prices(keys,trader_dictionary,global_prices,sigma, pf=5000):
@@ -205,21 +189,21 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, si
     avalanche_counter_current_time = []
     avalanche_price_delta_list = []
 
-    add_global_info(trader_dictionary,max_info) #Adding global info
+    add_global_info(trader_dictionary,max_info) 
 
     random.shuffle(keys)
     
+    # randly loop over all nodes 
     for key in keys:
-      
+        
+        # if nodes are active the avalanche caused is handled
         if trader_dictionary[key].info >= trader_dictionary[key].info_threshold:
             
             avalanche_size = handle_avalanche(trader_dictionary[key],trader_dictionary,network,alpha)
-            # print("avalanche size below")
-            # print(avalanche_size)
+
             avalanche_counter_current_time.append(avalanche_size)
             avalanche_price_delta = trader_dictionary[key].price - global_prices[-1]
             avalanche_price_delta_list.append(avalanche_price_delta)
-            # print(avalanche_counter_current_time)
 
     global_prices.append(global_price_calculate(trader_dictionary, sigma, beta))
     information_list = [trader_dictionary[key].info for key in keys]
@@ -229,16 +213,19 @@ def distribute_info(trader_dictionary, network,max_info,global_prices, alpha, si
 
     info_list[0].append(average_info)
     info_list[1].append(max_info)
+
     return avalanche_counter_current_time, avalanche_price_delta_list, global_prices, info_list
 
 def run_simulation(network_params,network,max_info,global_prices,alpha,sigma, beta, pf, info_list,avalanches, num_days):
 
     '''Generates a time series as well as any other necessary outputs from the simulation'''
+
     if network == 'small_world':
         network, trader_dictionary = create_trader_network(network_params[0], network_params[1], network_params[2],network_params[3],network_params[4], network_params[5])
     if network == 'barabasi':
         network, trader_dictionary = create_trader_network_barabasi(network_params[0],network_params[3],network_params[4], network_params[5])                                                          
-    # run simulation
+    
+    # run simulation for t timesteps
     for t in range(num_days):
         if t+1 % int(num_days/10) == 0:
             clear_output(wait=True)

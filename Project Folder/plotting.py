@@ -9,6 +9,10 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 import scipy.stats as stats
 import powerlaw
+from scipy.optimize import minimize
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.stats.diagnostic import het_arch
 
 
 
@@ -60,7 +64,7 @@ def generate_price_plots(df):
 
 def create_data_frame(chartist_fundamentalist_ratio,networks,network_params, max_info, starting_prices, alpha, sigma, beta, pf, info_list, avalanches, num_days):
 
-    # Initialize a dictionary to store the results
+    """Creates a data frame with the data frame to store data from multiple simulations for the purpose of plotting multiple plots at once"""
     simulation_results = {}
 
     for network_type in networks:
@@ -70,8 +74,8 @@ def create_data_frame(chartist_fundamentalist_ratio,networks,network_params, max
         
             # Reset or reinitialize the variables for each simulation
             global_prices = copy.deepcopy(starting_prices)
-            info_list = [[],[]]  # Reset information list
-            avalanches = []         # Reset avalanches
+            info_list = [[],[]]  
+            avalanches = []       
             
             percent_chart, percent_fund = ratio
             network_params[-3] = percent_fund  # Update percent_fund in network_params
@@ -109,6 +113,8 @@ def create_data_frame(chartist_fundamentalist_ratio,networks,network_params, max
 
 def plot_average_and_max_info(global_prices, info_list,avalanches):
 
+    """Plots the average and max information over time"""
+
     global_prices_sliced = global_prices[:500]
     info_list_sliced = info_list[0][:500]
     max_info_list_sliced = info_list[1][:500]
@@ -140,7 +146,7 @@ def plot_average_and_max_info(global_prices, info_list,avalanches):
     ax4.tick_params(axis='y', labelsize=18)
 
     plt.tight_layout()
-    plt.savefig("BA_Out_10000T.svg", dpi = 300)
+    plt.savefig("average_and_max_info.svg", dpi = 300)
 
     plt.show()
 
@@ -149,16 +155,13 @@ def plot_average_and_max_info(global_prices, info_list,avalanches):
 
 def plot_info_power_law_wattz(avalanches):
 
+    """Plots the power law for the Wattz network"""
+
     flattened_list = list(chain.from_iterable(avalanches))
     value_counts = Counter(flattened_list)
 
     values = np.array(list(value_counts.keys()))
     counts = np.array(list(value_counts.values()))
-
-    #indices = np.where(values<500) 
-
-    #values = values[indices]
-    #counts = counts[indices]
 
     non_zero_mask = counts > 0
     values_non_zero = values[non_zero_mask]
@@ -178,7 +181,6 @@ def plot_info_power_law_wattz(avalanches):
 
     plt.figure(figsize=(10, 6))
 
-    # Create a scatter plot on log-log scale with error bars
     plt.scatter(values_non_zero, counts_non_zero,alpha = 0.6,)
     plt.scatter(values_non_zero, counts_non_zero, color ='black',alpha = 0.5 ,facecolor = 'grey', label=f'Simulated data')
     plt.xlim(0.8,1000)
@@ -189,18 +191,19 @@ def plot_info_power_law_wattz(avalanches):
     plt.xscale('log')
     plt.yscale('log')
 
-    # Add labels and legend
     plt.title('Watts-Strogats Network', fontsize = 18)
     plt.xlabel('Avalanche sizes', fontsize = 16)
     plt.ylabel('Occurrences', fontsize = 16)
     plt.legend(fontsize = 12)
-    #plt.savefig("WS_PL_10000T.svg", dpi = 300)
+    plt.savefig("info_power_law_ws.svg", dpi = 300)
     plt.show()
 
 
 # Information avalanche power law with random network
     
 def plot_info_power_law_barabasi(avalanches):
+
+    """Plots power law for Barabasi network"""
 
     flattened_list = list(chain.from_iterable(avalanches))
     value_counts = Counter(flattened_list)
@@ -237,7 +240,7 @@ def plot_info_power_law_barabasi(avalanches):
     plt.xlabel('Avalanche sizes', fontsize = 16)
     plt.ylabel('Occurrences', fontsize = 16)
     plt.legend(fontsize = 12)
-
+    plt.savefig("info_power_law_ba.svg", dpi = 300)
     plt.show()
 
 
@@ -248,6 +251,9 @@ def plot_info_power_law_barabasi(avalanches):
 #Price change from fundamental value power law 
 
 def calculate_price_changes_from_fundamental(price_series, pf, step=1):
+    
+    """Calculates the price changes from fundamental value"""
+
     price_changes = []
     for i in range(0, len(price_series) - step, step):
         change = np.abs(pf - price_series[i])
@@ -255,6 +261,8 @@ def calculate_price_changes_from_fundamental(price_series, pf, step=1):
     return price_changes
 
 def plot_price_change_power_law(global_prices,pf):
+    
+    """Plots the price change from fundamental value power law"""
 
     def power_law_formula(x, a, k):
         return a * np.power(x, -k)
@@ -268,7 +276,7 @@ def plot_price_change_power_law(global_prices,pf):
     hist, bins = np.histogram(price_changes, bins=bin_edges, density=True)
     bin_centers = (bins[:-1] + bins[1:]) / 2
 
-    # Ensure we only fit to bins with non-zero counts
+    # Ensuring that we only fit to bins with non-zero counts
     non_zero_hist = hist[hist > 0]
     non_zero_bin_centers = bin_centers[hist > 0]
     
@@ -277,33 +285,23 @@ def plot_price_change_power_law(global_prices,pf):
     popt, pcov = curve_fit(power_law_formula, non_zero_bin_centers, non_zero_hist, p0=(1.0, 1.0),sigma= weights,  maxfev=5000)
     a, k = popt
 
-    # Prepare data for plotting fitted curve
     xspace = np.linspace(non_zero_bin_centers.min(), non_zero_bin_centers.max(), num=100)
     plt.scatter(non_zero_bin_centers, non_zero_hist, alpha=0.6, label='Data')
-    plt.plot(xspace, power_law_formula(xspace, *popt), color='red', label=f'Powerlaw fit (k={k:.2f})')    
+    plt.plot(xspace, power_law_formula(xspace, *popt), color='red', label=f'Powerlaw fit (Slope= -{k:.2f})')    
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('Price change')
     plt.ylabel('Frequency')
     plt.title('Price change from fundamental value power law')
     plt.legend()
+    plt.savefig("price_change_power_law.svg", dpi = 300)
     plt.show()
   
-def powerlaw_package_fit(global_prices,pf):
-
-    price_changes = calculate_price_changes_from_fundamental(global_prices, pf)
-    results = powerlaw.Fit(price_changes)
-
-    # The scaling parameter (alpha) of the power-law distribution corresponds to the exponent
-    alpha = results.power_law.alpha
-    sigma = results.power_law.sigma  # The standard error of the exponent
-    sigma = results.power_law.xmin
-    print("The exponent of the power law (alpha) is:", alpha)
-    print("Standard error of the exponent:", sigma)
-    print("The scaling parameter (xmin) is:", results.power_law.xmin)
 
 
 def compute_normalised_returns(global_prices):
+
+    """Calculates the normalised returns"""
 
     returns = [global_prices[i] - global_prices[i-1] for i in range(len(global_prices)-1)]
     std = np.std(returns)
@@ -315,8 +313,7 @@ def compute_normalised_returns(global_prices):
 
 def plot_fat_tail_returns(normalized_returns):
 
-
-    # Normalize Returns    
+    """Plots the fat tail returns"""
 
     #PDF
     counts, edges = np.histogram(normalized_returns, bins=30, density=True)
@@ -326,82 +323,149 @@ def plot_fat_tail_returns(normalized_returns):
     # Standard Gaussian fitting curve
     mu = 0
     sigma = 1
-    x = np.linspace(mu - 4*sigma, mu + 4*sigma, 1000)
-    Gaussian = norm.pdf(x, mu, sigma)
-    plt.plot(x, Gaussian, label='Standard normal distribution', color = "black" , linestyle = '--')
-    plt.yscale('log')
-
-    plt.yscale('log')
+    x_values = np.linspace(min(normalized_returns), max(normalized_returns), 1000)
+    Gaussian = norm.pdf(x_values, mu, sigma)
+    plt.plot(x_values, Gaussian, label='Standard normal distribution', color = "black" , linestyle = '--')
 
     plt.ylim(bottom=np.min(np.array(normalized_returns)[np.array(normalized_returns) > 0]))  
 
-    def fat_tail_model(x, A, B, q): #Defining a function to be fit
-        return A * (1 - (1 - q) * B * x ** 2) ** (1 / (1 - q))
-
-
-    ydata = np.array(normalized_returns)  
-
-    ydata_sorted = np.sort(ydata)
-    xdata = np.arange(1, len(ydata) + 1)
-
-    xdata_normalized = xdata / len(ydata)
-
-    initial_guess_A = max(ydata)
-    initial_guess_B = 1 / (2 * np.var(ydata))
-    initial_guess_q = 1.5 
-
-    params, covariance = curve_fit(fat_tail_model, xdata_normalized, ydata_sorted, p0=[initial_guess_A, initial_guess_B, initial_guess_q])
-
-    A, B, q = params
-
-    xfit = np.linspace(min(xdata_normalized), max(xdata_normalized), 1000)
-    yfit = fat_tail_model(xfit, A, B, q)
-
-
-    plt.legend(loc='upper right', fontsize='small') 
     plt.xlabel("Normalised Returns")
     plt.ylabel("PDF")
+
+
+    #Fitting Q Distribution
+
+    def q_gaussian(x, q, beta, A):
+        """
+        q-Gaussian fitting
+        """
+        if q == 1:
+            return A * np.exp(-beta * x**2)
+        else:
+            return A * np.maximum((1 - (1 - q) * beta * x**2), 1e-5)**(1 / (1 - q))
+            #return A * (1 - (1 - q) * beta * x**2)*(1 / (1 - q))
+        
+
+    initial_guess = [2, 2, 3]
+    params, cov = curve_fit(q_gaussian, bin_centers, counts, p0=initial_guess)
+    q_fit, beta_fit, A_fit = params
+
+    y_values = q_gaussian(x_values, q_fit, beta_fit, A_fit)
+    plt.plot(x_values, y_values, label=f'q-Gaussian(q={q_fit:.2f})', color='black')
+    plt.yscale('log')
+
+
+    plt.xlabel('Normalized Returns')
+    plt.ylabel('PDF')
+    plt.legend(loc = "upper right", fontsize = 'small')
+    plt.title("Normalised returns q-gaussian fitting")
+    plt.savefig("fat_tail_returns.svg", dpi = 300)
     plt.show()
-    print(q)
+
 
 
 def plot_qq_plot(normalized_returns):
+
+    """Plots the QQ plot of the normalised returns"""
 
     stats.probplot(normalized_returns, dist="norm", plot=plt)
     plt.title('Quantile-Quantile Plot')
     plt.xlabel('Gaussian Quantiles')
     plt.ylabel('Returns Quantiles')
+    plt.savefig("qq_plot.svg", dpi = 300)
     plt.show()
 
 def plot_p_values(fundamental_percentage_list, p_list, R_list):
+
+    """Plots the p values for different proportions of traders"""
     
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 5), sharex=True)
 
-    plt.subplots_adjust(hspace=0.5)  # Adjusts the vertical space between subplots
+    plt.subplots_adjust(hspace=0.5)  
 
     ax1.plot(fundamental_percentage_list, R_list, marker = "o", color = "black", markersize=3)
     ax1.set_title("P and R values for different proportions of traders")
     ax1.set_xlabel("Percentages of fundamentalists")
     ax1.set_ylabel("R-values")
     ax1.tick_params(axis='x', which='both', bottom=True, top=False, labelbottom=True)
-    #ax1.set_yscale('log')
-    #ax1.set_ylim(-100, 500)
-    #ax1.set_xlim(0, 0.25)
-
-
     ax1.hlines(0, xmin=0, xmax=1, colors='black', linestyles='dashed')
 
-    #ax1.set_yticks(range(int(min(R_list) * 1.1), int(max(R_list) * 1.1), 500))
     ax2.plot(fundamental_percentage_list, p_list, marker = "o", color = "black")
     ax2.set_xlabel("Percentages of fundamentalists")
     ax2.set_ylabel("P-values")
-    #ax2.set_yscale('log')
     ax2.hlines(0.05, xmin=0, xmax=1, colors='r', linestyles='dashed', label = "Significance level")
     ax2.set_ylim(0, 0.06)
     ax2.set_yticks([0, 0.05, ax2.get_yticks()[-1]])
     ax2.legend(fontsize='small', loc= 'center right')
 
+    plt.savefig("p_values_plot.svg", dpi = 300)
 
 
+# Stylized facts plotting
+#-----------------------------------------------------------------
+    
+def stylized_facts(global_prices):
+
+    """Plots the styalised facts related plots"""
+        
+    returns = np.diff(np.log(global_prices))
+    abs_returns = np.abs(returns)
+    squared_returns = returns**2
+
+    # ACF plot for returns with manual adjustment for black lines
+    fig, ax = plt.subplots(figsize=(10, 6))
+    plot_acf(returns, ax=ax, lags=20, alpha=0.05)
+    ax.set_title('ACF of Logarithmic Returns')
+    ax.set_xlabel('Lag')
+    ax.set_ylabel('Autocorrelation')
+    ax.set_ylim(-0.15, 0.15)
+
+    for line in ax.lines:
+        line.set_color('black')
+
+    for collection in ax.collections:
+        collection.set_facecolor('black')
+        collection.set_edgecolor('black')
+    plt.savefig("aa_facts.svg", dpi = 300)
+    plt.show()
+
+    # Ljung-Box test output
+    lb_stat, lb_pvalue = acorr_ljungbox(returns, lags=[10], return_df=False)
+    print(f"Ljung-Box Test P-Value: {lb_pvalue[0]}")
+    print("A high P-value suggests that there is no evidence against the null hypothesis, which is that there is no autocorrelation in the returns.")
+    print("This is a part of the Efficient Market Hypothesis, suggesting that past returns cannot predict future returns.")
+
+    # Plot for absolute returns so you can visually see the potential volatility clustering
+    plt.figure(figsize=(10, 6))
+    plt.plot(abs_returns, color='black', label='Absolute Returns')
+    plt.title('Absolute Returns Over Time')
+    plt.xlabel('Time')
+    plt.ylabel('Absolute Return')
+    plt.legend()
+    plt.savefig("absolute_returns_facts.svg", dpi = 300)
+    plt.show()
+
+    # ACF plot for squared returns so we can check for volatility clustering
+    fig, ax = plt.subplots(figsize=(10, 6))
+    plot_acf(squared_returns, ax=ax, lags=40, alpha=0.05)
+    ax.set_title('ACF of Squared Returns')
+    ax.set_ylabel('Squared Returns')
+    ax.set_xlabel('Lag')
+    ax.set_ylim(-0.15, 0.15)
+
+    for line in ax.lines:
+        line.set_color('black')
+
+    for collection in ax.collections:
+        collection.set_facecolor('black')
+        collection.set_edgecolor('black')
+
+    plt.savefig("clustering_facts.svg", dpi = 300)
+    plt.show()
+
+
+    test_stat, p_value, _, _ = het_arch(squared_returns)
+    print(f"ARCH Test Statistic: {test_stat}, p-value: {p_value}")
+    print("The p-value not being below 0.05 suggests that there is no evidence for the null hypothesis, which is that there are ARCH (volatility clustering) effects.")
 
 
