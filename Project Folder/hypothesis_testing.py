@@ -27,7 +27,6 @@ def multiple_runs_power_law_hypothesis_test(fundamental_percentage_list, network
     trader_configuration_list = []
 
     for funadamental_percentage in fundamental_percentage_list:
-        global_prices = [5000]
 
         chartist_percentage = 1-funadamental_percentage
         network_params[3] = funadamental_percentage

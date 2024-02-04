@@ -394,7 +394,7 @@ def plot_p_values(fundamental_percentage_list, p_list, R_list):
     ax2.set_xlabel("Percentages of fundamentalists")
     ax2.set_ylabel("P-values")
     ax2.hlines(0.05, xmin=0, xmax=1, colors='r', linestyles='dashed', label = "Significance level")
-    ax2.set_ylim(0, 0.06)
+    #ax2.set_ylim(0, 0.06)
     ax2.set_yticks([0, 0.05, ax2.get_yticks()[-1]])
     ax2.legend(fontsize='small', loc= 'center right')
 
